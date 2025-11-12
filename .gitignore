@@ -44,4 +44,10 @@ Thumbs.db
 
 /encrypt/encrypt-config.ts
 
+/public/participants/*
+!public/participants/example.txt
+
+/public/certificates/*
+!public/certificates/example.jpg
+
 /src/app/certificates/certificates.ts
