@@ -1,0 +1,12 @@
+<div id="bgr"></div>
+
+@if (ready) {
+  <main id="content">
+    <div id="certificate">
+      <div id="name" #nameEl [ngStyle]="{ 'margin-top': nameMargin }">
+        {{ name }}
+      </div>
+      <img [src]="certificatePath" alt="Certificate">
+    </div>
+  </main>
+}
