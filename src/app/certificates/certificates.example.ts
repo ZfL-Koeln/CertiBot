@@ -2,7 +2,7 @@ export type CERTMODEL = {
   image: string;
   secondPageImage?: string;
   outputFile: string;
-  participants: string;
+  participants?: string;
   nameMargin?: string;
   dialogTitle: string;
   dialogBody?: string;
@@ -12,7 +12,6 @@ export const CERTIFICATES: Record<string, CERTMODEL> = {
   RANDOM_STRING: {
     image: 'certificates/workshop-01.jpg',
     outputFile: 'workshop-01.pdf',
-    participants: '',
     nameMargin: '1280px',
     dialogTitle: 'Bitte geben Sie Ihren Namen ein:'
   },
