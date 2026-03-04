@@ -1,59 +1,93 @@
 # CertiBot
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.0.
+> Automated certificate generation for the Zentrum für LehrerInnenbildung (ZfL) — University of Cologne
 
-## Development server
+CertiBot is an Angular web application for the automated creation and secure management of participation certificates for courses and continuing education offerings at ZfL.
 
-To start a local development server, run:
+## Features
+
+- 📄 Automated generation of participation certificates
+- 🔐 Encryption of sensitive certificate data (via `encrypt/` module)
+- 🌐 Web-based interface built with Angular 20 (Standalone Components)
+- 📦 Static output deployable on Apache web servers
+
+## Tech Stack
+
+| Technology | Version |
+|---|---|
+| Angular | 20.x (CLI-generated) |
+| TypeScript | ~5.x |
+| Node.js | ≥ 18.x recommended |
+| Package Manager | npm |
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) ≥ 18
+- [Angular CLI](https://angular.dev/tools/cli) ≥ 20
+
+```bash
+npm install -g @angular/cli
+```
+
+## Installation
+
+```bash
+git clone https://github.com/ZfL-Koeln/CertiBot.git
+cd CertiBot
+npm install
+```
+
+## Development Server
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Then open your browser at [http://localhost:4200](http://localhost:4200).
 
-## Code scaffolding
+The application reloads automatically when source files are modified.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+## Build
 
 ```bash
 ng build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Build artifacts are placed in the `dist/` directory. The production build is optimized for performance and load time.
 
-## Running unit tests
+For deployment on an Apache web server, an `.htaccess` configuration file (`htaccess`) is included — rename it to `.htaccess` and copy it to the target directory before deploying.
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Project Structure
+
+```
+CertiBot/
+├── src/              # Angular application sources
+├── public/           # Static assets (logos, templates)
+├── encrypt/          # Encryption module for certificate data
+├── angular.json      # Angular CLI configuration
+├── htaccess          # Apache configuration (→ rename to .htaccess)
+├── tsconfig.json     # TypeScript configuration
+└── package.json      # Dependencies and npm scripts
+```
+
+## Tests
+
+**Unit tests:**
 
 ```bash
 ng test
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+**End-to-end tests:**
 
 ```bash
 ng e2e
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+> For e2e tests, a framework such as [Playwright](https://playwright.dev/) or [Cypress](https://www.cypress.io/) must be installed first.
 
-## Additional Resources
+## Deployment
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+1. Create a production build: `ng build`
+2. Copy the contents of `dist/certibot/browser/` to the web server
+3. Copy the `htaccess` file as `.htaccess` into the target directory (required for Angular routing)
