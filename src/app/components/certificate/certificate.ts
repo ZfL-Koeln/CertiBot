@@ -1,6 +1,5 @@
 import {Component, ElementRef, inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import html2canvas from 'html2canvas';
 import {jsPDF} from 'jspdf';
 import {MatButtonModule} from '@angular/material/button';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -130,6 +129,7 @@ export class Certificate implements OnInit, OnDestroy {
             await this.generatePdfFromContent();
           } catch (err) {
             console.error('Failed to generate PDF', err);
+            this.errorDialog.open(ErrorDialog, { disableClose: true });
           } finally {
             this.ready = false;
           }
@@ -138,13 +138,34 @@ export class Certificate implements OnInit, OnDestroy {
   }
 
   private async generatePdfFromContent(): Promise<void> {
-    const contentEl = this.contentRef?.nativeElement ?? document.getElementById('content');
-    if (!contentEl) throw new Error('Content element not found');
+    // Wait for web fonts (Albert Sans) to be available in canvas context.
+    await document.fonts.ready;
 
-    // Render DOM -> canvas
-    const canvas = await html2canvas(contentEl);
+    // Fetch the certificate image as a blob to avoid canvas cross-origin taint issues.
+    const imgBlob = await this.http.get(this.certificatePath, {responseType: 'blob'}).toPromise();
+    const imgDataUrl = await blobToDataUrl(imgBlob!);
+    const img = await loadImage(imgDataUrl);
+
+    // A4 at 300 dpi
+    const W = 2480;
+    const H = 3508;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d')!;
+
+    ctx.drawImage(img, 0, 0, W, H);
+
+    // Overlay the participant name at the configured vertical position.
+    const marginPx = parseInt(this.nameMargin, 10) || 1150;
+    ctx.font = '60px "Albert Sans Variable", "Albert Sans", sans-serif';
+    ctx.fillStyle = '#005179';
+    ctx.textAlign = 'center';
+    // +48px approximates the font baseline offset within the 60px line height.
+    ctx.fillText(this.name, W / 2, marginPx + 48);
+
     const contentDataURL = canvas.toDataURL('image/jpeg', JPG_QUALITY);
-
     const pdf = new jsPDF('p', 'mm', 'a4');
     pdf.addImage(contentDataURL, 'JPG', 0, 0, A4_WIDTH_MM, A4_HEIGHT_MM);
 
@@ -160,6 +181,15 @@ export class Certificate implements OnInit, OnDestroy {
 }
 
 // Helpers
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
