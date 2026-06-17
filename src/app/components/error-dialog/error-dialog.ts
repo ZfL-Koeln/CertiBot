@@ -1,4 +1,4 @@
-import {Component, Inject} from '@angular/core';
+import {Component, Inject, ChangeDetectionStrategy} from '@angular/core';
 import {FormsModule} from "@angular/forms";
 import {MatButtonModule} from "@angular/material/button";
 import {
@@ -22,6 +22,7 @@ import {DialogData} from "../certificate/certificate";
     MatInputModule
   ],
   templateUrl: './error-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './error-dialog.scss'
 })
 export class ErrorDialog {

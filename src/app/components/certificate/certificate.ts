@@ -1,4 +1,4 @@
-import {Component, ElementRef, inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, inject, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {jsPDF} from 'jspdf';
 import {MatButtonModule} from '@angular/material/button';
@@ -30,6 +30,7 @@ const JPG_QUALITY = 0.5 as const;
   standalone: true,
   imports: [MatFormFieldModule, MatInputModule, FormsModule, MatButtonModule, NgStyle],
   templateUrl: './certificate.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./certificate.scss']
 })
 export class Certificate implements OnInit, OnDestroy {
