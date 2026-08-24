@@ -114,6 +114,27 @@ importiert wird (kein Eintrag in `include` von `tsconfig.app.json` nötig).
   `src/app/certificates/certificates.ts` werden entfernt. Die Regeln rund um
   `encrypt/` und das root-`participants/`-Verzeichnis bleiben unangetastet.
 
+## Öffentliches Haupt-Repo, privates Daten-Repo
+
+CertiBot bleibt ein **öffentliches** Repo; das Daten-Repo ist **privat**. Ein
+öffentliches Repo darf ein privates als Submodul referenzieren.
+
+- Das öffentliche Repo speichert vom Submodul nur `.gitmodules` (mit der URL des
+  privaten Repos) und einen Commit-Zeiger (SHA). **Kein Inhalt** des privaten Repos
+  (Vorlagen, Anmeldelisten, `certificates.ts`) landet im öffentlichen Repo.
+- Das ist sicherer als der Ist-Zustand, in dem die Produktivdaten nur
+  `.gitignore`-geschützt im öffentlichen Repo liegen und versehentlich mitcommittet
+  werden könnten.
+- Öffentlich sichtbar wird lediglich die URL/der Name `Teilnahmebescheinigungen-Aktiv`
+  in `.gitmodules`; der Zugriff auf die Inhalte bleibt durch GitHub geschützt
+  (404 / Auth erforderlich).
+- Personen ohne Zugang können das Submodul nicht initialisieren → sie nutzen den
+  Fallback (siehe unten). Der Produktions-Build erfordert Build-Zeit-Zugriff auf das
+  private Repo, da die Daten in `dist/` mit ausgeliefert werden.
+- Submodul-URL: **HTTPS** (`https://github.com/…`) — bequem für interaktive Clones
+  mit GitHub-Login/Token. (SSH wäre für CI eine Alternative, ist hier aber nicht im
+  Scope.)
+
 ## Developer-Experience / Fallback
 
 Contributor **mit** Zugang zum privaten Datenrepo:
