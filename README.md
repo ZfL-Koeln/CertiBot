@@ -69,6 +69,12 @@ export const CERTIFICATES: Record<string, CERTMODEL> = {
 };
 ```
 
+Die Anwendung importiert diese Konfiguration über den TypeScript-Pfad-Alias
+`@data/certificates` (definiert in [`tsconfig.json`](tsconfig.json) als
+`@data/*` → `./data/*`). Die Datei muss deshalb exakt `data/certificates.ts`
+heißen — unabhängig davon, ob sie aus dem Submodul stammt oder (ohne Zugang zum
+privaten Datenrepo) aus der Beispielvorlage erzeugt wurde.
+
 Felder des Modells `CERTMODEL`:
 
 | Feld              | Pflicht | Bedeutung                                                                 |
