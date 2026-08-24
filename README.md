@@ -20,7 +20,7 @@ prüfen, sodass nur tatsächlich registrierte Personen eine Bescheinigung erhalt
 Aufruf von  /certificate/<id>
         │
         ▼
-Konfiguration zur <id> aus certificates.ts laden
+Konfiguration zur <id> aus data/certificates.ts laden
         │
         ├─ (optional) verschlüsselte Anmeldeliste laden und im Browser entschlüsseln
         │
