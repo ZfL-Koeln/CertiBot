@@ -48,16 +48,18 @@ Namen oder Bescheinigungen an einen Server übertragen.
 
 ## Konfiguration der Bescheinigungen
 
-Jede Veranstaltung wird als Eintrag in `src/app/certificates/certificates.ts`
-hinterlegt. Diese Datei ist per `.gitignore` ausgenommen und enthält die echten
-(produktiven) Zugangslinks — als Vorlage dient
-[`certificates.example.ts`](src/app/certificates/certificates.example.ts):
+Jede Veranstaltung wird als Eintrag in `data/certificates.ts` hinterlegt. Diese
+Datei liegt im privaten Daten-Submodul `data/` (siehe
+[Installation](#installation)) und enthält die echten (produktiven)
+Zugangslinks — als Vorlage dient weiterhin
+[`certificates.example.ts`](src/app/certificates/certificates.example.ts) im
+Hauptrepo:
 
 ```ts
 export const CERTIFICATES: Record<string, CERTMODEL> = {
   // Schlüssel = URL-Segment, idealerweise ein zufälliger, nicht erratbarer String
   e93a7f1b0c42d8e6a9f35c7d12b48f0e: {
-    image: 'certificates/workshop-02.jpg', // Vorlage in public/certificates/
+    image: 'certificates/workshop-02.jpg', // Vorlage in data/certificates/ (Produktion)
     outputFile: 'workshop-02.pdf',         // Dateiname des Downloads
     participants: 'participants/example.txt', // optional: verschl. Anmeldeliste
     nameMargin: '1100px',                  // vertikale Position des Namens
@@ -71,16 +73,17 @@ Felder des Modells `CERTMODEL`:
 
 | Feld              | Pflicht | Bedeutung                                                                 |
 |-------------------|---------|---------------------------------------------------------------------------|
-| `image`           | ja      | Pfad zur Vorlage (JPG) relativ zu `public/`                               |
+| `image`           | ja      | Pfad zur Vorlage (JPG), relativ zum Assets-Ausgabeverzeichnis (`public/` bzw. `data/certificates/`) |
 | `outputFile`      | ja      | Dateiname der erzeugten PDF                                               |
 | `dialogTitle`     | ja      | Überschrift im Namens-Dialog                                              |
 | `secondPageImage` | nein    | Optionale zweite PDF-Seite (JPG), z. B. für Rückseite / Programm          |
-| `participants`    | nein    | Pfad zur verschlüsselten Anmeldeliste relativ zu `public/`               |
+| `participants`    | nein    | Pfad zur verschlüsselten Anmeldeliste, relativ zum Assets-Ausgabeverzeichnis (`public/` bzw. `data/participants/`) |
 | `nameMargin`      | nein    | Vertikale Position des Namens auf der Vorlage (Default `-950px`)          |
 | `dialogBody`      | nein    | Zusätzlicher Erläuterungstext im Dialog                                   |
 
-Die Vorlagen (JPG) liegen in `public/certificates/`. Auch dieser Ordner ist
-weitgehend `.gitignore`-t; nur `example.jpg` ist eingecheckt.
+Die produktiven Vorlagen (JPG) liegen im Daten-Submodul unter
+`data/certificates/`; im Hauptrepo bleibt unter `public/certificates/` nur die
+Beispielvorlage `example.jpg` eingecheckt.
 
 > **Positionierung des Namens:** `nameMargin` ist der y-Wert (in Pixeln), an dem der
 > Name auf der 2480×3508 px großen Canvas-Fläche zentriert eingesetzt wird. Der Wert
@@ -91,9 +94,11 @@ weitgehend `.gitignore`-t; nur `example.jpg` ist eingecheckt.
 ## Anmeldelisten & Verschlüsselung
 
 Damit Teilnahmelisten nicht im Klartext im öffentlichen Web-Verzeichnis liegen,
-werden die Namen **AES-verschlüsselt** (crypto-js) im Ordner
-`public/participants/` abgelegt. Zur Laufzeit entschlüsselt CertiBot die Liste im
-Browser und gleicht den eingegebenen Namen ab (siehe
+werden die Namen **AES-verschlüsselt** (crypto-js) abgelegt. Produktiv liegen
+die verschlüsselten Listen im privaten Daten-Submodul unter
+`data/participants/`; im Hauptrepo dient `public/participants/example.txt`
+als Beispiel. Zur Laufzeit entschlüsselt CertiBot die Liste im Browser und
+gleicht den eingegebenen Namen ab (siehe
 [`encryption.ts`](src/app/services/encryption.ts)).
 
 ### Passwort konfigurieren
@@ -115,14 +120,18 @@ export const encrypt = {
 2. Den zu verarbeitenden Dateinamen in
    [`encrypt/encrypt-participants.ts`](encrypt/encrypt-participants.ts) eintragen
    (Variable `fileName`).
-3. Skript ausführen — es schreibt die verschlüsselte Liste nach
+3. Skript ausführen (unverändert) — es schreibt die verschlüsselte Liste nach
    `public/participants/<datei>.txt`:
 
 ```bash
 npx ts-node encrypt/encrypt-participants.ts
 ```
 
-4. Den Pfad `participants/<datei>.txt` im passenden `CERTIFICATES`-Eintrag setzen.
+4. Die erzeugte Datei aus `public/participants/` in das Daten-Submodul
+   `data/participants/` übernehmen (produktiv). Für Beispieldaten kann die
+   Datei stattdessen in `public/participants/` verbleiben.
+5. Den Pfad `participants/<datei>.txt` im passenden `CERTIFICATES`-Eintrag
+   (in `data/certificates.ts`) setzen.
 
 Personen, deren Name nicht in der Liste steht, erhalten den Fehlerdialog
 „Ihr Name befindet sich nicht in der Anmeldeliste." und keine PDF.
@@ -161,16 +170,31 @@ npm install -g @angular/cli
 ## Installation
 
 ```bash
-git clone https://github.com/ZfL-Koeln/CertiBot.git
+git clone --recurse-submodules https://github.com/ZfL-Koeln/CertiBot.git
 cd CertiBot
 npm install
 ```
 
-Vor dem ersten Start die beiden Konfigurationsdateien aus ihren Vorlagen anlegen:
+Nach einem normalen Klon (ohne `--recurse-submodules`) lässt sich das private
+Daten-Submodul `data/` nachträglich laden:
+
+```bash
+git submodule update --init data
+```
+
+Ohne Zugang zum privaten Datenrepo (`Teilnahmebescheinigungen-Aktiv`) lässt
+sich `data/` stattdessen aus der Beispielkonfiguration anlegen:
+
+```bash
+mkdir -p data/certificates data/participants
+cp src/app/certificates/certificates.example.ts data/certificates.ts
+```
+
+Vor dem ersten Start zusätzlich die Verschlüsselungs-Konfiguration aus ihrer
+Vorlage anlegen:
 
 ```bash
 cp encrypt/encrypt-config.example.ts encrypt/encrypt-config.ts
-cp src/app/certificates/certificates.example.ts src/app/certificates/certificates.ts
 ```
 
 Anschließend Passwort und Bescheinigungen wie oben beschrieben eintragen.
@@ -208,14 +232,34 @@ ng test        # Unit-Tests (Karma + Jasmine)
 
 ## Deployment (Apache)
 
-1. Produktions-Build erstellen: `ng build`
-2. Inhalt von `dist/CertiBot/browser/` in das Zielverzeichnis des Webservers kopieren
-   (entsprechend dem `baseHref` `/certificate/`).
-3. Die Datei [`htaccess`](htaccess) als `.htaccess` in dasselbe Verzeichnis
+1. Sicherstellen, dass das Daten-Submodul initialisiert ist, bevor gebaut wird:
+
+   ```bash
+   git submodule update --init data
+   ```
+
+   Andernfalls fehlen die produktiven Vorlagen (`data/certificates/`) und
+   Anmeldelisten (`data/participants/`) im Build.
+2. Produktions-Build erstellen: `ng build`
+3. Inhalt von `dist/CertiBot/browser/` in das Zielverzeichnis des Webservers kopieren
+   (entsprechend dem `baseHref` `/certificate/`). Die Inhalte aus `public/`
+   sowie aus dem Submodul (`data/certificates/`, `data/participants/`) werden
+   beim Build automatisch eingebunden (siehe [`angular.json`](angular.json)).
+4. Die Datei [`htaccess`](htaccess) als `.htaccess` in dasselbe Verzeichnis
    kopieren — sie leitet alle Anfragen auf `index.html` um, damit das clientseitige
    Routing (`/certificate/<id>`) funktioniert.
-4. Sicherstellen, dass die produktiven Vorlagen (`public/certificates/`) und
-   verschlüsselten Anmeldelisten (`public/participants/`) mit ausgeliefert werden.
+
+### Daten-Submodul aktualisieren
+
+Um neue oder geänderte Vorlagen, Anmeldelisten bzw. Konfiguration aus dem
+privaten Datenrepo zu übernehmen:
+
+```bash
+git submodule update --remote data
+git add data && git commit -m "Daten-Submodul aktualisiert"
+```
+
+Anschließend erneut bauen (`ng build`) und ausliefern.
 
 ---
 
@@ -223,11 +267,14 @@ ng test        # Unit-Tests (Karma + Jasmine)
 
 ```
 CertiBot/
+├── data/                              # privates Submodul (Produktivdaten)
+│   ├── certificates/                  # Vorlagen (JPG)
+│   ├── participants/                  # verschlüsselte Anmeldelisten
+│   └── certificates.ts                # produktive Konfiguration
 ├── src/
 │   └── app/
 │       ├── app.routes.ts              # Route /:id → Certificate-Komponente
 │       ├── certificates/
-│       │   ├── certificates.ts        # Produktive Konfiguration (gitignored)
 │       │   └── certificates.example.ts# Vorlage der Konfiguration
 │       ├── components/
 │       │   ├── certificate/           # Kernkomponente: Vorlage laden, Name setzen, PDF bauen
@@ -236,12 +283,13 @@ CertiBot/
 │       └── services/
 │           └── encryption.ts          # AES-Entschlüsselung der Anmeldeliste
 ├── public/
-│   ├── certificates/                  # Vorlagen (JPG) – gitignored außer example.jpg
-│   └── participants/                  # Verschlüsselte Anmeldelisten – gitignored außer example.txt
+│   ├── certificates/example.jpg       # Beispielvorlage
+│   └── participants/example.txt       # Beispiel-Anmeldeliste
 ├── encrypt/
 │   ├── encrypt-config.ts              # AES-Passwort (gitignored)
 │   ├── encrypt-config.example.ts      # Vorlage des Passworts
-│   └── encrypt-participants.ts        # Skript: Namen verschlüsseln
+│   └── encrypt-participants.ts        # Skript: Namen verschlüsseln (schreibt nach public/participants/)
+├── .gitmodules                        # Referenz auf privates Daten-Submodul
 ├── angular.json                       # Angular-CLI-Konfiguration (baseHref /certificate/)
 ├── htaccess                           # Apache-Konfiguration (→ als .htaccess umbenennen)
 └── package.json                       # Abhängigkeiten und npm-Skripte
