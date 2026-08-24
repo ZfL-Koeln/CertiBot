@@ -27,6 +27,14 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "certificates/**",
+                "input": "data"
+              },
+              {
+                "glob": "participants/**",
+                "input": "data"
               }
             ],
             "styles": [
@@ -86,6 +94,14 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "certificates/**",
+                "input": "data"
+              },
+              {
+                "glob": "participants/**",
+                "input": "data"
               }
             ],
             "styles": [
