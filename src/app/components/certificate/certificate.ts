@@ -13,7 +13,7 @@ import {of, Subject} from 'rxjs';
 import {NgStyle} from '@angular/common';
 import {Dialog} from '../dialog/dialog';
 import {ErrorDialog} from '../error-dialog/error-dialog';
-import {CERTIFICATES, CERTMODEL} from '../../certificates/certificates';
+import {CERTIFICATES, CERTMODEL} from '@data/certificates';
 
 export interface DialogData {
   name: string;
