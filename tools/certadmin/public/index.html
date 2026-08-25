@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>certadmin — Bescheinigung anlegen</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; color: #123; }
+    h1 { color: #005179; }
+    .row { display: flex; gap: 2rem; align-items: flex-start; }
+    .panel { flex: 1; min-width: 320px; }
+    label { display: block; margin: .6rem 0 .2rem; font-weight: 600; }
+    input, textarea { width: 100%; padding: .4rem; box-sizing: border-box; }
+    #canvasWrap { position: relative; display: inline-block; border: 1px solid #ccc; cursor: crosshair; }
+    /* Y an der Basislinie ausrichten (Naeherung) */
+    #marker { position: absolute; transform: translate(-50%, -100%); color: #005179; white-space: nowrap; pointer-events: none; font-family: sans-serif; }
+    button { margin-top: 1rem; padding: .6rem 1.2rem; background: #005179; color: #fff; border: 0; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+    #result { margin-top: 1rem; padding: 1rem; background: #eef6fb; border-radius: 4px; display: none; }
+    #result a { word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>Bescheinigung anlegen</h1>
+  <div class="row">
+    <div class="panel">
+      <label>PDF-Vorlage (aus Word exportiert)</label>
+      <input type="file" id="pdfFile" accept="application/pdf" />
+      <label>Namensgröße: <span id="sizeLabel">15</span> pt</label>
+      <input type="range" id="size" min="8" max="40" value="15" />
+      <p>Klicke in die Vorschau, wo der Name (Mittelpunkt der Basislinie) stehen soll.</p>
+      <div id="canvasWrap">
+        <canvas id="preview"></canvas>
+        <div id="marker">Max Mustermann</div>
+      </div>
+    </div>
+    <div class="panel">
+      <label>Dialog-Titel</label>
+      <input id="dialogTitle" value="Teilnahmebescheinigung" />
+      <label>Dialog-Text (optional)</label>
+      <textarea id="dialogBody" rows="2"></textarea>
+      <label>Dateiname der PDF</label>
+      <input id="outputFile" value="bescheinigung.pdf" />
+      <label>Anmeldeliste (optional, ein Name pro Zeile)</label>
+      <textarea id="participants" rows="6" placeholder="Leer lassen, wenn keine Prüfung gewünscht ist."></textarea>
+      <button id="create" disabled>Anlegen</button>
+      <div id="result"></div>
+    </div>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

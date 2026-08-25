@@ -31,13 +31,14 @@
 **Interfaces:**
 - Produces: verfügbare Module `pdf-lib` (`PDFDocument`, `rgb`) und `@pdf-lib/fontkit` (default export) für spätere Tasks; Font unter Laufzeitpfad `fonts/albert-sans.ttf`.
 
-- [ ] **Step 1: pdf-lib + fontkit installieren, jspdf/html2canvas entfernen**
+- [ ] **Step 1: pdf-lib + fontkit installieren, ungenutztes html2canvas entfernen**
 
 ```bash
 cd /Users/sportello/Develop/CertiBot
 npm install pdf-lib@^1.17.1 @pdf-lib/fontkit@^1.1.1
-npm uninstall jspdf html2canvas
+npm uninstall html2canvas
 ```
+> `jspdf` bleibt vorerst installiert und wird **erst in Task A5** entfernt — zusammen mit seiner Nutzung in `certificate.ts`. `certificate.ts` wird in diesem Task **nicht** angefasst.
 
 - [ ] **Step 2: Albert Sans als statisches TTF laden** (Fontsource liefert nur woff2; pdf-lib/fontkit braucht TTF/OTF)
 
@@ -587,25 +588,36 @@ describe('Certificate', () => {
 });
 ```
 
-- [ ] **Step 4: Unit-Tests der Komponente laufen**
+- [ ] **Step 4: jsPDF-Dependency entfernen** (Nutzung ist mit Step 1 aus `certificate.ts` verschwunden)
+
+```bash
+npm uninstall jspdf
+```
+Danach prüfen, dass keine Referenz mehr existiert:
+```bash
+grep -rn "jspdf\|jsPDF" src/ | grep -v node_modules
+```
+Expected: keine Treffer.
+
+- [ ] **Step 5: Unit-Tests der Komponente laufen**
 
 ```bash
 npx ng test --watch=false --include='**/certificate.spec.ts' 2>&1 | tail -20
 ```
 Expected: PASS (`should create`). Bei ausstehenden HTTP-Requests ggf. `provideHttpClientTesting` bereitgestellt — der Test rendert nur, ohne id, daher kein Fetch.
 
-- [ ] **Step 5: Manuelle End-to-End-Verifikation im Browser**
+- [ ] **Step 6: Manuelle End-to-End-Verifikation im Browser**
 
 ```bash
 npx ng serve
 ```
 Dann `http://localhost:4200/certificate/RANDOM_STRING` öffnen, Namen „Test Person" eingeben. Erwartung: eine PDF `beispiel-bescheinigung.pdf` wird heruntergeladen; auf Seite 1 steht „Test Person" (Albert Sans, dunkelblau) an Position (297, 560). Danach `http://localhost:4200/certificate/gibtsnicht` → Fehlerdialog. Server mit Strg-C beenden.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add src/app/components/certificate/certificate.ts src/app/components/certificate/certificate.html src/app/components/certificate/certificate.spec.ts
-git commit -m "Certificate: Laufzeit-Config + pdf-lib-Download statt Canvas/JPG
+git add src/app/components/certificate/certificate.ts src/app/components/certificate/certificate.html src/app/components/certificate/certificate.spec.ts package.json package-lock.json
+git commit -m "Certificate: Laufzeit-Config + pdf-lib-Download statt Canvas/JPG; jspdf entfernt
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
@@ -633,6 +645,8 @@ In `angular.json` in **beiden** `assets`-Arrays (Zeilen ~26–39 und ~94–107) 
 ],
 ```
 Begründung: Produktive `config/`, `templates/`, `participants/` liegen nur auf dem Server und werden separat hochgeladen; der App-Build bündelt sie nicht. Lokale Beispieldaten kommen aus `public/`.
+
+Außerdem in `angular.json` das in Task A5 großzügig auf `2.5MB` angehobene `maximumError` des `initial`-Budgets auf `2.2MB` straffen (gemessenes Initial-Bundle ~2.11MB, so bleibt das Budget ein sinnvoller Regressions-Wächter mit etwas Puffer). Den `maximumWarning`-Wert unverändert lassen.
 
 - [ ] **Step 2: Sauberer Produktions-Build**
 
@@ -741,7 +755,7 @@ test('writeCertificate writes pdf, config and encrypted list into data dir', () 
 - [ ] **Step 2: Test läuft und schlägt fehl**
 
 ```bash
-node --test tools/certadmin/lib/ 2>&1 | tail -15
+node --test 'tools/certadmin/lib/**/*.test.js' 2>&1 | tail -15
 ```
 Expected: FAIL (`Cannot find module './certadmin'`).
 
@@ -812,7 +826,7 @@ module.exports = { generateId, encryptNames, extractPassword, buildConfig, write
 In `package.json` unter `scripts` ergänzen:
 ```json
 "certadmin": "node tools/certadmin/server.js",
-"certadmin:test": "node --test tools/certadmin/lib/"
+"certadmin:test": "node --test 'tools/certadmin/lib/**/*.test.js'"
 ```
 Dann:
 ```bash

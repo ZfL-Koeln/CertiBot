@@ -43,7 +43,6 @@ __screenshots__/
 Thumbs.db
 
 /encrypt/encrypt-config.ts
-/encrypt/encrypt-participants.ts
 
 /participants/*
 !/participants/example.txt

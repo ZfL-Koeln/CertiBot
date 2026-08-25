@@ -27,14 +27,6 @@
               {
                 "glob": "**/*",
                 "input": "public"
-              },
-              {
-                "glob": "certificates/**",
-                "input": "data"
-              },
-              {
-                "glob": "participants/**",
-                "input": "data"
               }
             ],
             "styles": [
@@ -49,7 +41,7 @@
                 {
                   "type": "initial",
                   "maximumWarning": "500kB",
-                  "maximumError": "2MB"
+                  "maximumError": "2.2MB"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -95,14 +87,6 @@
               {
                 "glob": "**/*",
                 "input": "public"
-              },
-              {
-                "glob": "certificates/**",
-                "input": "data"
-              },
-              {
-                "glob": "participants/**",
-                "input": "data"
               }
             ],
             "styles": [

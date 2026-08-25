@@ -9,7 +9,6 @@ import {
   MatDialogTitle
 } from "@angular/material/dialog";
 import {MatInputModule} from "@angular/material/input";
-import {DialogData} from "../certificate/certificate";
 
 @Component({
   selector: 'app-dialog',
@@ -27,10 +26,10 @@ import {DialogData} from "../certificate/certificate";
 })
 export class ErrorDialog {
   constructor(public dialogRef: MatDialogRef<ErrorDialog>,
-              @Inject(MAT_DIALOG_DATA) public data: DialogData) {
+              @Inject(MAT_DIALOG_DATA) public data: { message?: string } | null) {
   }
 
   submit() {
-    this.dialogRef.close(this.data.name);
+    this.dialogRef.close(this.data?.message ?? '');
   }
 }
