@@ -755,7 +755,7 @@ test('writeCertificate writes pdf, config and encrypted list into data dir', () 
 - [ ] **Step 2: Test läuft und schlägt fehl**
 
 ```bash
-node --test tools/certadmin/lib/ 2>&1 | tail -15
+node --test 'tools/certadmin/lib/**/*.test.js' 2>&1 | tail -15
 ```
 Expected: FAIL (`Cannot find module './certadmin'`).
 
@@ -826,7 +826,7 @@ module.exports = { generateId, encryptNames, extractPassword, buildConfig, write
 In `package.json` unter `scripts` ergänzen:
 ```json
 "certadmin": "node tools/certadmin/server.js",
-"certadmin:test": "node --test tools/certadmin/lib/"
+"certadmin:test": "node --test 'tools/certadmin/lib/**/*.test.js'"
 ```
 Dann:
 ```bash
