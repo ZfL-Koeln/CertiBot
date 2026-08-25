@@ -38,6 +38,7 @@
               }
             ],
             "styles": [
+              "node_modules/@fontsource-variable/albert-sans/index.css",
               "src/styles.scss"
             ],
             "baseHref": "/certificate/"
