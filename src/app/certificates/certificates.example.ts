@@ -1,26 +1,11 @@
-export type CERTMODEL = {
-  image: string;
-  secondPageImage?: string;
-  outputFile: string;
-  participants?: string;
-  nameMargin?: string;
-  dialogTitle: string;
-  dialogBody?: string;
-};
+import type { CERTCONFIG } from './cert-config';
 
-export const CERTIFICATES: Record<string, CERTMODEL> = {
-  RANDOM_STRING: {
-    image: 'certificates/workshop-01.jpg',
-    outputFile: 'workshop-01.pdf',
-    nameMargin: '1280px',
-    dialogTitle: 'Bitte geben Sie Ihren Namen ein:'
-  },
-  e93a7f1b0c42d8e6a9f35c7d12b48f0e: {
-    image: 'certificates/workshop-02.jpg',
-    outputFile: 'workshop-02.pdf',
-    participants: 'participants/example.txt',
-    nameMargin: '1100px',
-    dialogTitle: 'Teilnahmebescheinigung Beispielworkshop',
-    dialogBody: 'Bitte geben Sie hier Ihren Namen ein. Ihre Eingabe wird automatisch mit der Anmeldeliste abgeglichen.'
-  }
+// Beispielhafte Laufzeit-Konfiguration. Produktiv liegt pro Veranstaltung
+// eine Datei config/<id>.json neben der App (siehe README).
+export const EXAMPLE_CONFIG: CERTCONFIG = {
+  template: 'templates/example.pdf',
+  outputFile: 'beispiel-bescheinigung.pdf',
+  name: { x: 297, y: 560, size: 15, color: '#005179' },
+  dialogTitle: 'Bitte geben Sie Ihren Namen ein:',
+  dialogBody: 'Beispielkonfiguration für die lokale Entwicklung.'
 };
