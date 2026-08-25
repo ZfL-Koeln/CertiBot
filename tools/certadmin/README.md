@@ -28,6 +28,11 @@ Das Werkzeug startet einen lokalen HTTP-Server auf `http://localhost:4300` und �
 
 Das Werkzeug zeigt nach dem Erstellen einen Link zur Bescheinigung an (z.B. `/certificate/<id>`).
 
+## Hinweise zur Vorlage
+
+- Die Vorlage sollte **nicht rotiert** sein (eine im PDF gesetzte Seitenrotation kann den Namen falsch platzieren) – normale Word-PDF-Exporte sind unrotiert.
+- Der eingebettete Zeichensatz ist **Albert Sans (lateinisch)** – Namen mit Zeichen außerhalb des lateinischen Schriftsatzes können nicht gestempelt werden (deutsche Umlaute/ß sind abgedeckt).
+
 ## Datei-Ausgabe
 
 Das Werkzeug schreibt die folgenden Dateien in das lokale `data/`-Verzeichnis (ein Git-Submodul):

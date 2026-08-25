@@ -40,7 +40,6 @@ export class Certificate implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   name = '';
-  ready = true;
   private config?: CERTCONFIG;
   private participants: string[] = [];
 
@@ -53,7 +52,10 @@ export class Certificate implements OnInit, OnDestroy {
       )
       .subscribe(cfg => {
         if (!cfg) {
-          this.errorDialog.open(ErrorDialog, { disableClose: true });
+          this.errorDialog.open(ErrorDialog, {
+            disableClose: true,
+            data: { message: 'Dieser Link ist ungültig oder die Bescheinigung ist nicht (mehr) verfügbar.' }
+          });
           return;
         }
         this.config = cfg;
@@ -93,7 +95,10 @@ export class Certificate implements OnInit, OnDestroy {
           this.name = (result as string).trim();
 
           if (this.participants.length > 0 && !this.participants.includes(this.name)) {
-            this.errorDialog.open(ErrorDialog, { disableClose: true });
+            this.errorDialog.open(ErrorDialog, {
+              disableClose: true,
+              data: { message: 'Ihr Name befindet sich nicht in der Anmeldeliste.' }
+            });
             return;
           }
 
@@ -102,9 +107,10 @@ export class Certificate implements OnInit, OnDestroy {
             this.downloadBlob(blob, cfg.outputFile || 'teilnahmebescheinigung.pdf');
           } catch (err) {
             console.error('Failed to generate PDF', err);
-            this.errorDialog.open(ErrorDialog, { disableClose: true });
-          } finally {
-            this.ready = false;
+            this.errorDialog.open(ErrorDialog, {
+              disableClose: true,
+              data: { message: 'Die Bescheinigung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.' }
+            });
           }
         }
       });
