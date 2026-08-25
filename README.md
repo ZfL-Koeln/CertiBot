@@ -20,7 +20,7 @@ prüfen, sodass nur tatsächlich registrierte Personen eine Bescheinigung erhalt
 Aufruf von  /certificate/<id>
         │
         ▼
-Konfiguration zur <id> aus data/certificates.ts laden
+Konfiguration config/<id>.json per HTTP laden (zur Laufzeit, kein Rebuild nötig)
         │
         ├─ (optional) verschlüsselte Anmeldeliste laden und im Browser entschlüsseln
         │
@@ -30,10 +30,10 @@ Dialog: Teilnehmer:in gibt Namen ein
         ├─ Anmeldeliste vorhanden?  ──►  Name nicht enthalten  ──►  Fehlerdialog
         │                                Name enthalten
         ▼
-Vorlage (JPG) auf 2480×3508 px Canvas zeichnen + Name als Text einsetzen
+PDF-Vorlage laden, Name mit pdf-lib an der konfigurierten Position einsetzen
         │
         ▼
-PDF (A4, jsPDF) erzeugen und lokal herunterladen
+PDF lokal herunterladen
 ```
 
 Die Anwendung besitzt genau eine Route mit einem Parameter (`:id`, siehe
@@ -48,96 +48,77 @@ Namen oder Bescheinigungen an einen Server übertragen.
 
 ## Konfiguration der Bescheinigungen
 
-Jede Veranstaltung wird als Eintrag in `data/certificates.ts` hinterlegt. Diese
-Datei liegt im privaten Daten-Submodul `data/` (siehe
-[Installation](#installation)) und enthält die echten (produktiven)
-Zugangslinks — als Vorlage dient weiterhin
-[`certificates.example.ts`](src/app/certificates/certificates.example.ts) im
-Hauptrepo:
+Jede Veranstaltung wird zur Laufzeit über eine eigene Datei `config/<id>.json`
+konfiguriert. Diese Dateien liegen **nicht** im App-Build, sondern werden
+produktiv separat auf dem Server im Verzeichnis `config/` neben `index.html`
+abgelegt (siehe [Deployment](#deployment-apache)) — ein neuer Eintrag oder
+eine Änderung erfordert also **keinen Rebuild** der Anwendung. CertiBot lädt
+die passende Datei beim Aufruf von `/certificate/<id>` per HTTP (siehe
+[`cert-config-loader.ts`](src/app/services/cert-config-loader.ts)).
 
-```ts
-export const CERTIFICATES: Record<string, CERTMODEL> = {
-  // Schlüssel = URL-Segment, idealerweise ein zufälliger, nicht erratbarer String
-  e93a7f1b0c42d8e6a9f35c7d12b48f0e: {
-    image: 'certificates/workshop-02.jpg', // Vorlage in data/certificates/ (Produktion)
-    outputFile: 'workshop-02.pdf',         // Dateiname des Downloads
-    participants: 'participants/example.txt', // optional: verschl. Anmeldeliste
-    nameMargin: '1100px',                  // vertikale Position des Namens
-    dialogTitle: 'Teilnahmebescheinigung Beispielworkshop',
-    dialogBody: 'Bitte geben Sie hier Ihren Namen ein …' // optional
-  }
-};
+Für die lokale Entwicklung liegt unter
+[`public/config/RANDOM_STRING.json`](public/config/RANDOM_STRING.json) ein
+Beispiel:
+
+```json
+{
+  "template": "templates/example.pdf",
+  "outputFile": "beispiel-bescheinigung.pdf",
+  "name": { "x": 297, "y": 560, "size": 15, "color": "#005179" },
+  "dialogTitle": "Bitte geben Sie Ihren Namen ein:",
+  "dialogBody": "Beispielkonfiguration für die lokale Entwicklung."
+}
 ```
 
-Die Anwendung importiert diese Konfiguration über den TypeScript-Pfad-Alias
-`@data/certificates` (definiert in [`tsconfig.json`](tsconfig.json) als
-`@data/*` → `./data/*`). Die Datei muss deshalb exakt `data/certificates.ts`
-heißen — unabhängig davon, ob sie aus dem Submodul stammt oder (ohne Zugang zum
-privaten Datenrepo) aus der Beispielvorlage erzeugt wurde.
+Felder des Konfigurationsformats (`CERTCONFIG`, siehe
+[`cert-config.ts`](src/app/certificates/cert-config.ts)):
 
-Felder des Modells `CERTMODEL`:
+| Feld                | Pflicht | Bedeutung                                                                 |
+|---------------------|---------|----------------------------------------------------------------------------|
+| `template`          | ja      | Pfad zur PDF-Vorlage, relativ zum Ausgabeverzeichnis (`templates/…`)      |
+| `outputFile`        | ja      | Dateiname der erzeugten PDF                                               |
+| `name`              | ja      | Position/Größe/Farbe des eingesetzten Namens, siehe unten                 |
+| `name.x`            | ja      | Horizontaler Mittelpunkt, um den der Name zentriert wird, in PDF-Punkten (Ursprung unten-links) |
+| `name.y`            | ja      | Position der Namens-Basislinie in PDF-Punkten (Ursprung unten-links)      |
+| `name.size`         | ja      | Schriftgröße in pt                                                        |
+| `name.color`        | nein    | Hex-Farbe des Namens, z. B. `#005179` (Default `#005179`)                 |
+| `dialogTitle`       | ja      | Überschrift im Namens-Dialog                                              |
+| `secondPage`        | nein    | Optionale zweite PDF-Seite (Pfad zu einer weiteren PDF), wird angehängt   |
+| `participants`      | nein    | Pfad zur verschlüsselten Anmeldeliste, relativ zum Ausgabeverzeichnis (im lokalen Beispiel oben weggelassen) |
+| `dialogBody`        | nein    | Zusätzlicher Erläuterungstext im Dialog                                   |
 
-| Feld              | Pflicht | Bedeutung                                                                 |
-|-------------------|---------|---------------------------------------------------------------------------|
-| `image`           | ja      | Pfad zur Vorlage (JPG), relativ zum Assets-Ausgabeverzeichnis (`public/` bzw. `data/certificates/`) |
-| `outputFile`      | ja      | Dateiname der erzeugten PDF                                               |
-| `dialogTitle`     | ja      | Überschrift im Namens-Dialog                                              |
-| `secondPageImage` | nein    | Optionale zweite PDF-Seite (JPG), z. B. für Rückseite / Programm          |
-| `participants`    | nein    | Pfad zur verschlüsselten Anmeldeliste, relativ zum Assets-Ausgabeverzeichnis (`public/` bzw. `data/participants/`) |
-| `nameMargin`      | nein    | Vertikale Position des Namens auf der Vorlage (Default `-950px`)          |
-| `dialogBody`      | nein    | Zusätzlicher Erläuterungstext im Dialog                                   |
+Die PDF-Vorlagen selbst liegen unter `templates/` (produktiv auf dem Server,
+lokal als Beispiel unter [`public/templates/example.pdf`](public/templates/example.pdf)),
+der für die Namens-Einblendung verwendete Font unter
+[`public/fonts/albert-sans.ttf`](public/fonts/albert-sans.ttf). Der Name wird
+mit [pdf-lib](https://pdf-lib.js.org/) direkt in die PDF-Vorlage eingebettet
+(siehe [`pdf-generator.ts`](src/app/services/pdf-generator.ts)) — es gibt
+keine Zwischenstufe über Canvas/JPG mehr.
 
-Die produktiven Vorlagen (JPG) liegen im Daten-Submodul unter
-`data/certificates/`; im Hauptrepo bleibt unter `public/certificates/` nur die
-Beispielvorlage `example.jpg` eingecheckt.
-
-> **Positionierung des Namens:** `nameMargin` ist der y-Wert (in Pixeln), an dem der
-> Name auf der 2480×3508 px großen Canvas-Fläche zentriert eingesetzt wird. Der Wert
-> muss pro Vorlage einmal ausprobiert / justiert werden.
+Neue Bescheinigungen (Vorlage hochladen, `config/<id>.json` anlegen,
+optional Anmeldeliste verschlüsseln) werden mit dem separaten, lokal
+laufenden Werkzeug **`certadmin`** (Phase B dieses Projekts) erstellt. Das
+Werkzeug schreibt die Dateien lokal in das private Daten-Submodul `data/`
+(`data/config/`, `data/templates/`, `data/participants/`); von dort werden
+sie separat auf den Server hochgeladen (siehe [Deployment](#deployment-apache))
+— ein Rebuild oder Redeploy der CertiBot-Anwendung ist dafür nicht nötig.
 
 ---
 
 ## Anmeldelisten & Verschlüsselung
 
 Damit Teilnahmelisten nicht im Klartext im öffentlichen Web-Verzeichnis liegen,
-werden die Namen **AES-verschlüsselt** (crypto-js) abgelegt. Produktiv liegen
-die verschlüsselten Listen im privaten Daten-Submodul unter
-`data/participants/`; im Hauptrepo dient `public/participants/example.txt`
-als Beispiel. Zur Laufzeit entschlüsselt CertiBot die Liste im Browser und
-gleicht den eingegebenen Namen ab (siehe
-[`encryption.ts`](src/app/services/encryption.ts)).
+werden die Namen **AES-verschlüsselt** (crypto-js) abgelegt. Zur Laufzeit lädt
+CertiBot die in `participants` referenzierte Liste, entschlüsselt sie im
+Browser und gleicht den eingegebenen Namen ab (siehe
+[`encryption.ts`](src/app/services/encryption.ts)). Das lokale Beispiel dazu
+liegt unter [`public/participants/example.txt`](public/participants/example.txt).
 
-### Passwort konfigurieren
-
-Das AES-Passwort steht in `encrypt/encrypt-config.ts` (per `.gitignore`
-ausgenommen). Vorlage:
-[`encrypt-config.example.ts`](encrypt/encrypt-config.example.ts).
-
-```ts
-export const encrypt = {
-  password: 'DEIN-GEHEIMES-PASSWORT'
-};
-```
-
-### Anmeldeliste verschlüsseln
-
-1. Klartext-Namen (ein Name pro Zeile) unter `encrypt/participants/<datei>.txt`
-   ablegen.
-2. Den zu verarbeitenden Dateinamen in
-   [`encrypt/encrypt-participants.ts`](encrypt/encrypt-participants.ts) eintragen
-   (Variable `fileName`).
-3. Skript ausführen (unverändert) — es schreibt die verschlüsselte Liste nach
-   `public/participants/<datei>.txt`:
-
-```bash
-npx ts-node encrypt/encrypt-participants.ts
-```
-
-4. Die erzeugte Datei aus `public/participants/` in das Daten-Submodul
-   `data/participants/` übernehmen (produktiv). Für Beispieldaten kann die
-   Datei stattdessen in `public/participants/` verbleiben.
-5. Den Pfad `participants/<datei>.txt` im passenden `CERTIFICATES`-Eintrag
-   (in `data/certificates.ts`) setzen.
+Das Anlegen und Verschlüsseln neuer Anmeldelisten (Klartext-Namen eintragen,
+verschlüsselte Datei nach `data/participants/` schreiben, Referenz in der
+zugehörigen `data/config/<id>.json` setzen) übernimmt künftig ebenfalls das
+Werkzeug **`certadmin`** (Phase B) — ein manuelles Ausführen einzelner
+Verschlüsselungs-Skripte ist dafür nicht mehr nötig.
 
 Personen, deren Name nicht in der Liste steht, erhalten den Fehlerdialog
 „Ihr Name befindet sich nicht in der Anmeldeliste." und keine PDF.
@@ -157,7 +138,7 @@ Personen, deren Name nicht in der Liste steht, erhalten den Fehlerdialog
 | Angular          | 22.x (Standalone Components) |
 | Angular Material | 22.x              |
 | TypeScript       | ~6.0              |
-| jsPDF            | PDF-Erzeugung     |
+| pdf-lib          | PDF-Erzeugung (Name in Vorlage einbetten) |
 | crypto-js        | AES-Verschlüsselung |
 | Node.js          | ≥ 20 empfohlen    |
 | Paketmanager     | npm               |
@@ -188,13 +169,9 @@ Daten-Submodul `data/` nachträglich laden:
 git submodule update --init data
 ```
 
-Ohne Zugang zum privaten Datenrepo (`Teilnahmebescheinigungen-Aktiv`) lässt
-sich `data/` stattdessen aus der Beispielkonfiguration anlegen:
-
-```bash
-mkdir -p data/certificates data/participants
-cp src/app/certificates/certificates.example.ts data/certificates.ts
-```
+Ohne Zugang zum privaten Datenrepo (`Teilnahmebescheinigungen-Aktiv`) ist
+kein Einrichten von `data/` nötig: Für die lokale Entwicklung genügen die
+Beispieldateien unter `public/` (siehe [Konfiguration](#konfiguration-der-bescheinigungen)).
 
 Vor dem ersten Start zusätzlich die Verschlüsselungs-Konfiguration aus ihrer
 Vorlage anlegen:
@@ -203,7 +180,7 @@ Vorlage anlegen:
 cp encrypt/encrypt-config.example.ts encrypt/encrypt-config.ts
 ```
 
-Anschließend Passwort und Bescheinigungen wie oben beschrieben eintragen.
+Anschließend das AES-Passwort in `encrypt-config.ts` eintragen.
 
 ## Entwicklungsserver
 
@@ -238,34 +215,23 @@ ng test        # Unit-Tests (Karma + Jasmine)
 
 ## Deployment (Apache)
 
-1. Sicherstellen, dass das Daten-Submodul initialisiert ist, bevor gebaut wird:
-
-   ```bash
-   git submodule update --init data
-   ```
-
-   Andernfalls fehlen die produktiven Vorlagen (`data/certificates/`) und
-   Anmeldelisten (`data/participants/`) im Build.
-2. Produktions-Build erstellen: `ng build`
-3. Inhalt von `dist/CertiBot/browser/` in das Zielverzeichnis des Webservers kopieren
-   (entsprechend dem `baseHref` `/certificate/`). Die Inhalte aus `public/`
-   sowie aus dem Submodul (`data/certificates/`, `data/participants/`) werden
-   beim Build automatisch eingebunden (siehe [`angular.json`](angular.json)).
+1. Produktions-Build erstellen: `ng build`. Der Build bündelt nur die
+   Inhalte aus `public/` (Beispielkonfiguration, -vorlage, -font,
+   -anmeldeliste, siehe [`angular.json`](angular.json)) — produktive
+   `config/`-, `templates/`- und `participants/`-Dateien sind **nicht**
+   Teil des Builds.
+2. Inhalt von `dist/CertiBot/browser/` in das Zielverzeichnis des Webservers
+   kopieren (entsprechend dem `baseHref` `/certificate/`).
+3. Produktive `config/<id>.json`-Dateien, PDF-Vorlagen (`templates/`) und
+   ggf. verschlüsselte Anmeldelisten (`participants/`) liegen direkt auf dem
+   Server neben `index.html` und werden separat gepflegt: Das lokal
+   laufende Werkzeug **`certadmin`** (Phase B) legt sie zunächst im privaten
+   Daten-Submodul `data/` ab, von wo aus sie auf den Server hochgeladen
+   werden. Ein neuer Eintrag benötigt daher weder einen neuen `ng build`
+   noch ein erneutes Deployment der Anwendung selbst.
 4. Die Datei [`htaccess`](htaccess) als `.htaccess` in dasselbe Verzeichnis
    kopieren — sie leitet alle Anfragen auf `index.html` um, damit das clientseitige
    Routing (`/certificate/<id>`) funktioniert.
-
-### Daten-Submodul aktualisieren
-
-Um neue oder geänderte Vorlagen, Anmeldelisten bzw. Konfiguration aus dem
-privaten Datenrepo zu übernehmen:
-
-```bash
-git submodule update --remote data
-git add data && git commit -m "Daten-Submodul aktualisiert"
-```
-
-Anschließend erneut bauen (`ng build`) und ausliefern.
 
 ---
 
@@ -273,30 +239,39 @@ Anschließend erneut bauen (`ng build`) und ausliefern.
 
 ```
 CertiBot/
-├── data/                              # privates Submodul (Produktivdaten)
-│   ├── certificates/                  # Vorlagen (JPG)
-│   ├── participants/                  # verschlüsselte Anmeldelisten
-│   └── certificates.ts                # produktive Konfiguration
 ├── src/
 │   └── app/
 │       ├── app.routes.ts              # Route /:id → Certificate-Komponente
 │       ├── certificates/
-│       │   └── certificates.example.ts# Vorlage der Konfiguration
+│       │   ├── cert-config.ts         # CERTCONFIG-Modell (Format von config/<id>.json)
+│       │   └── certificates.example.ts# Beispiel einer CERTCONFIG (Dokumentationszweck)
 │       ├── components/
-│       │   ├── certificate/           # Kernkomponente: Vorlage laden, Name setzen, PDF bauen
+│       │   ├── certificate/           # Kernkomponente: Config laden, Name abfragen, PDF bauen
 │       │   ├── dialog/                # Namens-Eingabedialog
 │       │   └── error-dialog/          # Fehlerdialog (Name nicht in Liste)
 │       └── services/
+│           ├── cert-config-loader.ts  # lädt config/<id>.json zur Laufzeit per HTTP
+│           ├── pdf-generator.ts       # setzt den Namen per pdf-lib in die PDF-Vorlage ein
 │           └── encryption.ts          # AES-Entschlüsselung der Anmeldeliste
-├── public/
-│   ├── certificates/example.jpg       # Beispielvorlage
-│   └── participants/example.txt       # Beispiel-Anmeldeliste
+├── public/                            # lokale Beispieldaten, werden 1:1 mitgebaut
+│   ├── config/RANDOM_STRING.json      # Beispiel-Konfiguration
+│   ├── templates/example.pdf          # Beispiel-PDF-Vorlage
+│   ├── fonts/albert-sans.ttf          # Font für die Namens-Einblendung
+│   └── participants/example.txt       # Beispiel-Anmeldeliste (verschlüsselt)
+├── data/                              # privates Git-Submodul (Teilnahmebescheinigungen-Aktiv)
+│   ├── config/                        # echte config/<id>.json-Dateien
+│   ├── templates/                     # echte PDF-Vorlagen
+│   └── participants/                  # echte (verschlüsselte) Anmeldelisten
 ├── encrypt/
-│   ├── encrypt-config.ts              # AES-Passwort (gitignored)
-│   ├── encrypt-config.example.ts      # Vorlage des Passworts
-│   └── encrypt-participants.ts        # Skript: Namen verschlüsseln (schreibt nach public/participants/)
-├── .gitmodules                        # Referenz auf privates Daten-Submodul
-├── angular.json                       # Angular-CLI-Konfiguration (baseHref /certificate/)
+│   ├── encrypt-config.ts              # AES-Passwort (gitignored), zur Laufzeit im Browser genutzt
+│   └── encrypt-config.example.ts      # Vorlage des Passworts
+├── .gitmodules                        # verweist auf das private Submodul data/
+├── angular.json                       # Angular-CLI-Konfiguration (baseHref /certificate/, Assets nur aus public/)
 ├── htaccess                           # Apache-Konfiguration (→ als .htaccess umbenennen)
 └── package.json                       # Abhängigkeiten und npm-Skripte
 ```
+
+`data/` wird lokal vom Werkzeug **`certadmin`** (Phase B) befüllt und dient
+als Ablage, bevor die Dateien produktiv auf den Server hochgeladen werden;
+es ist nicht Teil des App-Builds (siehe [Konfiguration](#konfiguration-der-bescheinigungen)
+und [Deployment](#deployment-apache)).
