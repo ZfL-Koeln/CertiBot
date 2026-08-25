@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "certadmin": "node tools/certadmin/server.js",
+    "certadmin:test": "node --test 'tools/certadmin/lib/**/*.test.js'"
   },
   "prettier": {
     "overrides": [
