@@ -646,6 +646,8 @@ In `angular.json` in **beiden** `assets`-Arrays (Zeilen ~26–39 und ~94–107) 
 ```
 Begründung: Produktive `config/`, `templates/`, `participants/` liegen nur auf dem Server und werden separat hochgeladen; der App-Build bündelt sie nicht. Lokale Beispieldaten kommen aus `public/`.
 
+Außerdem in `angular.json` das in Task A5 großzügig auf `2.5MB` angehobene `maximumError` des `initial`-Budgets auf `2.2MB` straffen (gemessenes Initial-Bundle ~2.11MB, so bleibt das Budget ein sinnvoller Regressions-Wächter mit etwas Puffer). Den `maximumWarning`-Wert unverändert lassen.
+
 - [ ] **Step 2: Sauberer Produktions-Build**
 
 ```bash
