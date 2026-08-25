@@ -47,3 +47,5 @@ Thumbs.db
 
 /participants/*
 !/participants/example.txt
+
+deploy.sh
