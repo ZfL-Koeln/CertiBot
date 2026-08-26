@@ -35,20 +35,33 @@ source "$CONFIG_FILE"
 
 MODE="${1:-all}"
 
+# SSH-Verbindungsmultiplexing: Alle scp/ssh-Aufrufe teilen sich eine
+# Master-Verbindung, sodass die Passphrase des Keys nur EINMAL abgefragt wird
+# (beim ersten Verbindungsaufbau). Die Verbindung wird am Ende wieder geschlossen.
+# Kurzer Socket-Pfad in /tmp (nicht $TMPDIR), damit das Socket-Pfadlimit
+# (~104 Zeichen) nicht überschritten wird.
+SSH_CONTROL="$(mktemp -u /tmp/certibot-deploy-XXXXXX)"
+SSH_OPTS=(-o "ControlMaster=auto" -o "ControlPath=$SSH_CONTROL" -o "ControlPersist=120")
+
+close_master() {
+  ssh -O exit -o "ControlPath=$SSH_CONTROL" "$REMOTE" >/dev/null 2>&1 || true
+}
+trap close_master EXIT
+
 deploy_app() {
   echo "==> App bauen (ng build)"
   npx ng build
 
   echo "==> App hochladen -> $TARGET"
-  scp -r dist/CertiBot/browser/* "$REMOTE:$TARGET/"
+  scp "${SSH_OPTS[@]}" -r dist/CertiBot/browser/* "$REMOTE:$TARGET/"
 
   echo "==> .htaccess hochladen (clientseitiges Routing)"
-  scp htaccess "$REMOTE:$TARGET/.htaccess"
+  scp "${SSH_OPTS[@]}" htaccess "$REMOTE:$TARGET/.htaccess"
 }
 
 deploy_certs() {
   echo "==> Zielverzeichnisse sicherstellen"
-  ssh "$REMOTE" "mkdir -p '$TARGET/config' '$TARGET/templates' '$TARGET/participants'"
+  ssh "${SSH_OPTS[@]}" "$REMOTE" "mkdir -p '$TARGET/config' '$TARGET/templates' '$TARGET/participants'"
 
   echo "==> Bescheinigungsdateien hochladen (config/, templates/, participants/)"
   shopt -s nullglob
@@ -58,19 +71,19 @@ deploy_certs() {
   shopt -u nullglob
 
   if [ ${#cfg[@]} -gt 0 ]; then
-    scp "${cfg[@]}" "$REMOTE:$TARGET/config/"
+    scp "${SSH_OPTS[@]}" "${cfg[@]}" "$REMOTE:$TARGET/config/"
   else
     echo "   (keine config-Dateien in data/config/)"
   fi
 
   if [ ${#tpl[@]} -gt 0 ]; then
-    scp "${tpl[@]}" "$REMOTE:$TARGET/templates/"
+    scp "${SSH_OPTS[@]}" "${tpl[@]}" "$REMOTE:$TARGET/templates/"
   else
     echo "   (keine Vorlagen in data/templates/)"
   fi
 
   if [ ${#par[@]} -gt 0 ]; then
-    scp "${par[@]}" "$REMOTE:$TARGET/participants/"
+    scp "${SSH_OPTS[@]}" "${par[@]}" "$REMOTE:$TARGET/participants/"
   else
     echo "   (keine Anmeldelisten in data/participants/)"
   fi
