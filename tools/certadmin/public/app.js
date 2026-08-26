@@ -62,6 +62,10 @@ els.pdfFile.addEventListener('change', async () => {
   els.canvas.height = viewport.height;
   await page.render({ canvasContext: els.canvas.getContext('2d'), viewport }).promise;
 
+  // Dateiname der erzeugten PDF standardmäßig = Dateiname der Vorlage
+  // (überschreibbar).
+  document.getElementById('outputFile').value = file.name;
+
   // Standard-Position/-Größe vorbelegen (per Klick/Regler überschreibbar).
   // yTopPt = Seitenhöhe − DEFAULT_NAME.y, damit im Ergebnis exakt y=DEFAULT_NAME.y steht.
   els.size.value = String(DEFAULT_NAME.size);
