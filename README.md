@@ -225,23 +225,47 @@ ng test        # Unit-Tests (Karma + Jasmine)
 
 ## Deployment (Apache)
 
-1. Produktions-Build erstellen: `ng build`. Der Build bündelt nur die
-   Inhalte aus `public/` (Beispielkonfiguration, -vorlage, -font,
-   -anmeldeliste, siehe [`angular.json`](angular.json)) — produktive
-   `config/`-, `templates/`- und `participants/`-Dateien sind **nicht**
-   Teil des Builds.
-2. Inhalt von `dist/CertiBot/browser/` in das Zielverzeichnis des Webservers
-   kopieren (entsprechend dem `baseHref` `/certificate/`).
-3. Produktive `config/<id>.json`-Dateien, PDF-Vorlagen (`templates/`) und
-   ggf. verschlüsselte Anmeldelisten (`participants/`) liegen direkt auf dem
-   Server neben `index.html` und werden separat gepflegt: Das lokal
-   laufende Werkzeug **`certadmin`** (Phase B) legt sie zunächst im privaten
-   Daten-Submodul `data/` ab, von wo aus sie auf den Server hochgeladen
-   werden. Ein neuer Eintrag benötigt daher weder einen neuen `ng build`
-   noch ein erneutes Deployment der Anwendung selbst.
-4. Die Datei [`htaccess`](htaccess) als `.htaccess` in dasselbe Verzeichnis
-   kopieren — sie leitet alle Anfragen auf `index.html` um, damit das clientseitige
-   Routing (`/certificate/<id>`) funktioniert.
+Es gibt **zwei getrennte Deployments**: die **App** (nur bei Code-Änderungen)
+und die **Bescheinigungen** (bei jeder neuen/geänderten — ohne Rebuild). Beides
+übernimmt das Skript [`deploy.sh`](deploy.sh).
+
+### Einmalige Einrichtung
+
+Der Server-Zugang steht in `deploy-config.sh` (per `.gitignore` ausgenommen,
+enthält Servername/Pfad). Vor dem ersten Deploy aus der Vorlage anlegen und
+`REMOTE`/`TARGET` eintragen:
+
+```bash
+cp deploy-config.example.sh deploy-config.sh
+```
+
+### Deployen
+
+```bash
+./deploy.sh          # App (ng build) + .htaccess + alle Bescheinigungsdateien
+./deploy.sh app      # nur App (ng build) + .htaccess
+./deploy.sh certs    # nur Bescheinigungen (config/, templates/, participants/) — KEIN Rebuild
+```
+
+Was dabei passiert:
+
+1. **App:** `ng build` erzeugt den Produktions-Build unter
+   `dist/CertiBot/browser/` (`baseHref` `/certificate/`). Der Build bündelt
+   **nur** `public/` (Beispieldaten, siehe [`angular.json`](angular.json)) —
+   produktive `config/`-, `templates/`- und `participants/`-Dateien sind
+   **nicht** Teil des Builds. Der Build wird ins Zielverzeichnis kopiert,
+   zusammen mit [`htaccess`](htaccess) als `.htaccess` (leitet Anfragen auf
+   `index.html` um, damit das clientseitige Routing `/certificate/<id>`
+   funktioniert).
+2. **Bescheinigungen:** Die produktiven Dateien liegen im privaten
+   Daten-Submodul `data/` (dort vom Werkzeug **`certadmin`** abgelegt) und
+   werden nach `config/`, `templates/` bzw. `participants/` neben `index.html`
+   hochgeladen. Sie werden zur Laufzeit vom Server geladen — ein neuer Eintrag
+   benötigt daher **weder einen neuen `ng build` noch ein erneutes Deployment
+   der App** (`./deploy.sh certs` genügt).
+
+Ein App-Deploy überschreibt `index.html`, JS und CSS, **löscht aber keine**
+bereits hochgeladenen Bescheinigungen auf dem Server.
 
 ---
 
@@ -278,6 +302,9 @@ CertiBot/
 ├── .gitmodules                        # verweist auf das private Submodul data/
 ├── angular.json                       # Angular-CLI-Konfiguration (baseHref /certificate/, Assets nur aus public/)
 ├── htaccess                           # Apache-Konfiguration (→ als .htaccess umbenennen)
+├── deploy.sh                          # Deploy-Skript (Modi: all/app/certs)
+├── deploy-config.example.sh           # Vorlage für den Server-Zugang
+├── deploy-config.sh                   # echte REMOTE/TARGET-Werte (gitignored)
 └── package.json                       # Abhängigkeiten und npm-Skripte
 ```
 
