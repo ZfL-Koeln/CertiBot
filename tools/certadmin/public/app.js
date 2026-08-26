@@ -95,5 +95,15 @@ els.create.addEventListener('click', async () => {
     return;
   }
   els.result.style.display = 'block';
-  els.result.innerHTML = `Angelegt. Link: <a href="/certificate/${data.id}">/certificate/${data.id}</a><br>Dateien liegen in <code>data/</code>. Jetzt committen/pushen und hochladen.`;
+  // Der Pfad ist relativ zur Basis-URL der ausgelieferten App — NICHT zu diesem
+  // Werkzeug (das auf Port 4300 läuft). Deshalb kein relativer <a>-Link, der
+  // gegen localhost:4300 auflösen würde, sondern der Pfad als kopierbarer Text
+  // plus ein absoluter Test-Link auf den Angular-Dev-Server (Port 4200).
+  const path = `/certificate/${data.id}`;
+  els.result.innerHTML =
+    `<strong>Angelegt.</strong> Pfad: <code>${path}</code><br>` +
+    `Lokal testen: <a href="http://localhost:4200${path}" target="_blank" rel="noopener">http://localhost:4200${path}</a> ` +
+    `<small>(Dev-Server ggf. neu starten, damit die neuen Dateien eingelesen werden)</small><br>` +
+    `Produktiv: an die Basis-URL der App anhängen (z. B. <code>https://…${path}</code>).<br>` +
+    `Die Dateien liegen in <code>data/</code> — jetzt committen/pushen und auf den Server hochladen.`;
 });
