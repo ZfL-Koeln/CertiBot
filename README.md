@@ -97,7 +97,8 @@ keine Zwischenstufe über Canvas/JPG mehr.
 
 Neue Bescheinigungen (Vorlage hochladen, `config/<id>.json` anlegen,
 optional Anmeldeliste verschlüsseln) werden mit dem separaten, lokal
-laufenden Werkzeug **`certadmin`** (Phase B dieses Projekts) erstellt. Das
+laufenden Werkzeug **`certadmin`** erstellt (`npm run certadmin`, siehe
+[`tools/certadmin/README.md`](tools/certadmin/README.md)). Das
 Werkzeug schreibt die Dateien lokal in das private Daten-Submodul `data/`
 (`data/config/`, `data/templates/`, `data/participants/`); von dort werden
 sie separat auf den Server hochgeladen (siehe [Deployment](#deployment-apache))
@@ -116,9 +117,9 @@ liegt unter [`public/participants/example.txt`](public/participants/example.txt)
 
 Das Anlegen und Verschlüsseln neuer Anmeldelisten (Klartext-Namen eintragen,
 verschlüsselte Datei nach `data/participants/` schreiben, Referenz in der
-zugehörigen `data/config/<id>.json` setzen) übernimmt künftig ebenfalls das
-Werkzeug **`certadmin`** (Phase B) — ein manuelles Ausführen einzelner
-Verschlüsselungs-Skripte ist dafür nicht mehr nötig.
+zugehörigen `data/config/<id>.json` setzen) übernimmt ebenfalls das
+Werkzeug **`certadmin`** — ein manuelles Ausführen einzelner
+Verschlüsselungs-Skripte ist dafür nicht nötig.
 
 Personen, deren Name nicht in der Liste steht, erhalten den Fehlerdialog
 „Ihr Name befindet sich nicht in der Anmeldeliste." und keine PDF.
@@ -299,6 +300,13 @@ CertiBot/
 ├── encrypt/
 │   ├── encrypt-config.ts              # AES-Passwort (gitignored), zur Laufzeit im Browser genutzt
 │   └── encrypt-config.example.ts      # Vorlage des Passworts
+├── tools/
+│   ├── certadmin/                     # lokales Werkzeug zum Anlegen von Bescheinigungen
+│   │   ├── server.js                  #   lokaler HTTP-Server (Port 4300)
+│   │   ├── lib/certadmin.js           #   Kernlogik: id, Verschlüsselung, config schreiben
+│   │   ├── public/                    #   Oberfläche (pdf.js-Vorschau, Namensposition)
+│   │   └── README.md                  #   Bedienung des Werkzeugs
+│   └── list-certificates.js           # listet vorhandene Bescheinigungen (npm run list-certs)
 ├── .gitmodules                        # verweist auf das private Submodul data/
 ├── angular.json                       # Angular-CLI-Konfiguration (baseHref /certificate/, Assets nur aus public/)
 ├── htaccess                           # Apache-Konfiguration (→ als .htaccess umbenennen)
@@ -308,7 +316,7 @@ CertiBot/
 └── package.json                       # Abhängigkeiten und npm-Skripte
 ```
 
-`data/` wird lokal vom Werkzeug **`certadmin`** (Phase B) befüllt und dient
+`data/` wird lokal vom Werkzeug **`certadmin`** befüllt und dient
 als Ablage, bevor die Dateien produktiv auf den Server hochgeladen werden;
 es ist nicht Teil des App-Builds (siehe [Konfiguration](#konfiguration-der-bescheinigungen)
 und [Deployment](#deployment-apache)).
