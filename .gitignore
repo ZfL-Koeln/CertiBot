@@ -48,3 +48,4 @@ Thumbs.db
 !/participants/example.txt
 
 deploy-config.sh
+tools/certificate-links.txt
