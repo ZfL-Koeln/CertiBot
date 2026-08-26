@@ -40,7 +40,7 @@ function main() {
     } catch (err) {
       title = `<Fehler beim Lesen: ${err.message}>`;
     }
-    return `${BASE_URL}/${id}: ${title}`;
+    return `${BASE_URL}/${id} - ${title}`;
   });
 
   const output = lines.length ? lines.join('\n') + '\n' : '';
