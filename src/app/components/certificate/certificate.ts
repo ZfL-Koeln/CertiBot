@@ -52,24 +52,36 @@ export class Certificate implements OnInit, OnDestroy {
       )
       .subscribe(cfg => {
         if (!cfg) {
-          this.errorDialog.open(ErrorDialog, {
-            disableClose: true,
-            data: { message: 'Dieser Link ist ungültig oder die Bescheinigung ist nicht (mehr) verfügbar.' }
-          });
+          this.openErrorDialog('Dieser Link ist ungültig oder die Bescheinigung ist nicht (mehr) verfügbar.');
           return;
         }
         this.config = cfg;
 
+        // If an allowlist is required, load and decrypt it BEFORE offering the
+        // name dialog. Opening the dialog in parallel would let a fast submit
+        // (or a failed list load) slip past the check — the allowlist must
+        // fail closed, not open.
         if (cfg.participants) {
           this.http.get(cfg.participants, { responseType: 'text' })
-            .subscribe(data => {
-              const encryptedNames = data.split('\n').filter(Boolean);
-              this.participants = encryptedNames.map(n => this.encryption.decrypt(n));
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: data => {
+                const encryptedNames = data.split('\n').filter(Boolean);
+                this.participants = encryptedNames.map(n => this.encryption.decrypt(n));
+                this.openNameDialogAndGenerate();
+              },
+              error: () => this.openErrorDialog(
+                'Die Anmeldeliste konnte nicht geladen werden. Bitte versuchen Sie es später erneut.'
+              )
             });
+        } else {
+          this.openNameDialogAndGenerate();
         }
-
-        this.openNameDialogAndGenerate();
       });
+  }
+
+  private openErrorDialog(message: string): void {
+    this.errorDialog.open(ErrorDialog, { disableClose: true, data: { message } });
   }
 
   ngOnDestroy(): void {
@@ -94,11 +106,11 @@ export class Certificate implements OnInit, OnDestroy {
         next: async (result) => {
           this.name = (result as string).trim();
 
-          if (this.participants.length > 0 && !this.participants.includes(this.name)) {
-            this.errorDialog.open(ErrorDialog, {
-              disableClose: true,
-              data: { message: 'Ihr Name befindet sich nicht in der Anmeldeliste.' }
-            });
+          // Gate on whether an allowlist is REQUIRED (config), not on whether
+          // one happens to be non-empty — the list is guaranteed loaded here
+          // when required, because the dialog only opens after a successful load.
+          if (cfg.participants && !this.participants.includes(this.name)) {
+            this.openErrorDialog('Ihr Name befindet sich nicht in der Anmeldeliste.');
             return;
           }
 
@@ -107,10 +119,7 @@ export class Certificate implements OnInit, OnDestroy {
             this.downloadBlob(blob, cfg.outputFile || 'teilnahmebescheinigung.pdf');
           } catch (err) {
             console.error('Failed to generate PDF', err);
-            this.errorDialog.open(ErrorDialog, {
-              disableClose: true,
-              data: { message: 'Die Bescheinigung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.' }
-            });
+            this.openErrorDialog('Die Bescheinigung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.');
           }
         }
       });
