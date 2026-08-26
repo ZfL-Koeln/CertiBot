@@ -8,6 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "certadmin": "node tools/certadmin/server.js",
+    "list-certs": "node tools/list-certificates.js",
     "certadmin:test": "node --test 'tools/certadmin/lib/**/*.test.js'"
   },
   "prettier": {
