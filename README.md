@@ -192,6 +192,16 @@ Danach [http://localhost:4200/certificate/RANDOM_STRING](http://localhost:4200/c
 aufrufen (der Beispiel-Schlüssel `RANDOM_STRING` stammt aus der Beispielkonfiguration).
 Die Anwendung lädt bei Änderungen an den Quelldateien automatisch neu.
 
+> **Lokales Testen erzeugter Bescheinigungen:** Der Entwicklungsserver
+> (`ng serve`, Konfiguration `development`) liefert zusätzlich zu `public/`
+> auch das `data/`-Submodul (`config/`, `templates/`, `participants/`) aus.
+> Eine mit `certadmin` erzeugte Bescheinigung ist damit sofort unter
+> `http://localhost:4200/certificate/<id>` aufrufbar — ohne sie nach `public/`
+> zu kopieren. Nach dem Anlegen den Dev-Server einmal neu starten, damit die
+> neuen Dateien eingelesen werden. Der **Produktions-Build** (`ng build`)
+> bündelt weiterhin ausschließlich `public/`; produktive Daten werden separat
+> auf den Server hochgeladen.
+
 ## Build
 
 ```bash
