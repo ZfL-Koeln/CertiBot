@@ -3,6 +3,10 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdf.worker.mjs';
 
 const RENDER_SCALE = 1.0; // 1 CSS-Pixel = 1 PDF-Punkt
 
+// Standard-Platzierung des Namens (pdf-lib-Konvention: Ursprung unten-links).
+// Wird beim Laden einer PDF vorbelegt und kann per Klick/Regler überschrieben werden.
+const DEFAULT_NAME = { x: 300, y: 542, size: 15, color: '#005179' };
+
 function bufToBase64(buf) {
   const bytes = new Uint8Array(buf);
   let binary = '';
@@ -57,6 +61,14 @@ els.pdfFile.addEventListener('change', async () => {
   els.canvas.width = viewport.width;
   els.canvas.height = viewport.height;
   await page.render({ canvasContext: els.canvas.getContext('2d'), viewport }).promise;
+
+  // Standard-Position/-Größe vorbelegen (per Klick/Regler überschreibbar).
+  // yTopPt = Seitenhöhe − DEFAULT_NAME.y, damit im Ergebnis exakt y=DEFAULT_NAME.y steht.
+  els.size.value = String(DEFAULT_NAME.size);
+  els.sizeLabel.textContent = String(DEFAULT_NAME.size);
+  placement = { xPt: DEFAULT_NAME.x, yTopPt: pageHeightPt - DEFAULT_NAME.y };
+  updateMarker();
+
   els.create.disabled = false;
 });
 
@@ -79,7 +91,7 @@ els.create.addEventListener('click', async () => {
       x: Math.round(placement.xPt),
       y: Math.round(pageHeightPt - placement.yTopPt), // pdf-lib: Ursprung unten-links
       size,
-      color: '#005179',
+      color: DEFAULT_NAME.color,
     },
     dialogTitle: document.getElementById('dialogTitle').value.trim(),
     dialogBody: document.getElementById('dialogBody').value.trim() || undefined,
