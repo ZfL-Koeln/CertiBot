@@ -132,6 +132,96 @@ Personen, deren Name nicht in der Liste steht, erhalten den Fehlerdialog
 
 ---
 
+## Neue Teilnahmebescheinigung erstellen
+
+Eine neue Bescheinigung wird mit dem lokalen Werkzeug **`certadmin`** angelegt.
+Es erzeugt die `id`, positioniert den Namen anhand deiner PDF-Vorlage,
+verschlüsselt (optional) die Anmeldeliste und schreibt alle Dateien in das
+Daten-Submodul `data/`. Der Upload auf den Server und die Git-Commits erfolgen
+danach **manuell** (siehe Schritte 5–7). Details zum Werkzeug:
+[`tools/certadmin/README.md`](tools/certadmin/README.md).
+
+**Voraussetzung:** Die Datei `encrypt/encrypt-config.ts` muss existieren und
+das AES-Passwort enthalten (siehe [Installation](#installation)). Für den Upload
+auf den Server wird zusätzlich Zugriff auf das private Daten-Submodul `data/`
+benötigt.
+
+1. **Vorlage vorbereiten.** Die Bescheinigungsvorlage als PDF (A4, unrotiert –
+   ein normaler Word-PDF-Export passt) exportieren. Der Name wird später mit
+   dem Font **Albert Sans (lateinisch, inkl. Umlaute/ß)** eingesetzt.
+
+2. **`certadmin` starten.**
+
+   ```bash
+   npm run certadmin
+   ```
+
+   Das Werkzeug startet einen lokalen Server auf `http://localhost:4300` und
+   öffnet die Seite im Browser.
+
+3. **Bescheinigung konfigurieren** (in der Oberfläche):
+   - Die PDF-Vorlage laden.
+   - In der Vorschau auf die Stelle klicken, an der der Name erscheinen soll
+     (horizontaler Mittelpunkt der Basislinie).
+   - **Dialog-Titel** (z. B. „Teilnahmebescheinigung"), optional **Dialog-Text**
+     und **Dateiname** der erzeugten PDF (z. B. `bescheinigung.pdf`) eintragen.
+   - Optional eine **Anmeldeliste** einfügen (ein Klartext-Name pro Zeile) – sie
+     wird verschlüsselt abgelegt, nur gelistete Personen erhalten dann eine PDF.
+   - Auf **„Anlegen"** klicken. Das Werkzeug zeigt anschließend den Link
+     `/certificate/<id>` an.
+
+   Geschrieben werden dabei (mit der neu erzeugten `<id>`):
+   - `data/config/<id>.json` – die Konfiguration
+     (Felder siehe [Konfiguration der Bescheinigungen](#konfiguration-der-bescheinigungen))
+   - `data/templates/<id>.pdf` – die PDF-Vorlage
+   - `data/participants/<id>.txt` – die verschlüsselte Anmeldeliste (nur falls angegeben)
+
+4. **Lokal prüfen.** Dev-Server starten (bzw. neu starten, damit die neuen
+   Dateien aus `data/` eingelesen werden) und den Link aufrufen:
+
+   ```bash
+   ng serve
+   ```
+
+   Danach `http://localhost:4200/certificate/<id>` öffnen, einen Testnamen
+   eingeben und die erzeugte PDF kontrollieren (Position, Schreibweise,
+   ggf. Abgleich mit der Anmeldeliste). Der Dev-Server liefert `data/` mit aus
+   (siehe [Entwicklungsserver](#entwicklungsserver)).
+
+5. **Daten-Submodul committen.** Die neuen Dateien im `data/`-Submodul
+   committen und pushen:
+
+   ```bash
+   cd data
+   git add config/<id>.json templates/<id>.pdf participants/<id>.txt
+   git commit -m "Neue Bescheinigung <id>"
+   git push
+   cd ..
+   ```
+
+6. **Submodul-Zeiger im Hauptrepo aktualisieren.** Den aktualisierten
+   Submodul-Stand im Hauptrepository committen und pushen:
+
+   ```bash
+   git add data
+   git commit -m "Daten-Submodul aktualisiert"
+   git push
+   ```
+
+7. **Auf den Server deployen** – **kein Rebuild** der App nötig:
+
+   ```bash
+   ./deploy.sh certs
+   ```
+
+   Lädt ausschließlich `config/`, `templates/` und `participants/` hoch; die neue
+   Bescheinigung ist danach sofort unter `/certificate/<id>` erreichbar (siehe
+   [Deployment](#deployment-apache)).
+
+Bereits vorhandene Bescheinigungen lassen sich mit `npm run list-certs` auflisten.
+
+---
+
 ## Technologie-Stack
 
 | Technologie      | Version           |
